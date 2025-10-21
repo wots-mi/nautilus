@@ -8,11 +8,11 @@ terraform {
     }
   }
 
-  # Remote state backend configuration
+
    backend "azurerm" {
-     resource_group_name  = var.tf_state_resource_group
-     storage_account_name = var.tf_state_storage_account
-     container_name       = var.tf_state_container
+     resource_group_name  = "terraform-state-dev"
+     storage_account_name = "nautilustfstatedev"
+     container_name       = "state"
      key                  = "terraform.tfstate"
    }
 }
