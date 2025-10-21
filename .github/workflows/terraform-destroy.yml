@@ -1,11 +1,20 @@
-name: 'Terraform Destroy'
+name: '⚠️ Terraform Destroy (Dangerous)'
 
 on:
   workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to destroy'
+        required: true
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
 
 # Ensure only one workflow runs at a time to prevent state lock conflicts
 concurrency:
-  group: terraform-${{ github.workflow }}
+  group: terraform-${{ github.event.inputs.environment }}
   cancel-in-progress: false
 
 env:
@@ -14,8 +23,9 @@ env:
 
 jobs:
   terraform-destroy:
-    name: 'Terraform Destroy'
+    name: 'Terraform Destroy - ${{ github.event.inputs.environment }}'
     runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
     permissions:
       contents: read
       id-token: write
@@ -36,8 +46,25 @@ jobs:
           tenant-id: ${{ secrets.ARM_TENANT_ID }}
           subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
 
+      - name: 'Load Backend Configuration'
+        id: backend-config
+        run: |
+          TFVARS_FILE="terraform.${{ github.event.inputs.environment }}.tfvars"
+          STORAGE_ACCOUNT=$(grep 'backend_storage_account_name' $TFVARS_FILE | cut -d'=' -f2 | tr -d ' "')
+          RESOURCE_GROUP=$(grep 'backend_resource_group_name' $TFVARS_FILE | cut -d'=' -f2 | tr -d ' "')
+          CONTAINER=$(grep 'backend_container_name' $TFVARS_FILE | cut -d'=' -f2 | tr -d ' "')
+          echo "storage_account=$STORAGE_ACCOUNT" >> $GITHUB_OUTPUT
+          echo "resource_group=$RESOURCE_GROUP" >> $GITHUB_OUTPUT
+          echo "container=$CONTAINER" >> $GITHUB_OUTPUT
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+
       - name: 'Terraform Init'
-        run: terraform init
+        run: |
+          terraform init \
+            -backend-config="storage_account_name=${{ steps.backend-config.outputs.storage_account }}" \
+            -backend-config="resource_group_name=${{ steps.backend-config.outputs.resource_group }}" \
+            -backend-config="container_name=${{ steps.backend-config.outputs.container }}" \
+            -backend-config="key=terraform.tfstate"
         working-directory: ${{ env.WORKING_DIRECTORY }}
 
       - name: 'Terraform Validate'
@@ -45,13 +72,22 @@ jobs:
         working-directory: ${{ env.WORKING_DIRECTORY }}
 
       - name: 'Terraform Plan Destroy'
-        run: terraform plan -destroy -no-color -var-file="terraform.dev.tfvars"
+        run: terraform plan -destroy -no-color -var-file="terraform.${{ github.event.inputs.environment }}.tfvars"
         working-directory: ${{ env.WORKING_DIRECTORY }}
         env:
           TF_VAR_subscription_id_nautilus: ${{ secrets.ARM_SUBSCRIPTION_ID }}
 
+      - name: '⚠️ Confirm Destruction'
+        run: |
+          echo "================================================"
+          echo "⚠️  WARNING: DESTRUCTIVE OPERATION"
+          echo "================================================"
+          echo "Environment: ${{ github.event.inputs.environment }}"
+          echo "This will DESTROY all resources in the above environment!"
+          echo "================================================"
+
       - name: 'Terraform Destroy'
-        run: terraform destroy -auto-approve -no-color -var-file="terraform.dev.tfvars"
+        run: terraform destroy -auto-approve -no-color -var-file="terraform.${{ github.event.inputs.environment }}.tfvars"
         working-directory: ${{ env.WORKING_DIRECTORY }}
         env:
           TF_VAR_subscription_id_nautilus: ${{ secrets.ARM_SUBSCRIPTION_ID }}
