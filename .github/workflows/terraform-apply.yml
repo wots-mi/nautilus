@@ -1,4 +1,4 @@
-name: 'Terraform Apply'
+name: 'Terraform Apply (Dev)'
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
 
 # Ensure only one workflow runs at a time to prevent state lock conflicts
 concurrency:
-  group: terraform-${{ github.workflow }}
+  group: terraform-apply-dev
   cancel-in-progress: false
 
 env:
@@ -19,7 +19,7 @@ env:
 
 jobs:
   terraform-apply:
-    name: 'Terraform Apply'
+    name: 'Terraform Apply (Dev Environment)'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -42,7 +42,7 @@ jobs:
           subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
 
       - name: 'Terraform Init'
-        run: terraform init
+        run: terraform init -backend-config="key=dev/terraform.tfstate"
         working-directory: ${{ env.WORKING_DIRECTORY }}
 
       - name: 'Terraform Validate'

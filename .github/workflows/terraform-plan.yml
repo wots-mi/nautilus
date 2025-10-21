@@ -1,4 +1,4 @@
-name: 'Terraform Plan'
+name: 'Terraform Plan (Dev)'
 
 on:
   pull_request:
@@ -10,7 +10,7 @@ on:
 
 # Ensure only one workflow runs at a time to prevent state lock conflicts
 concurrency:
-  group: terraform-${{ github.workflow }}-${{ github.ref }}
+  group: terraform-plan-dev-${{ github.ref }}
   cancel-in-progress: false
 
 env:
@@ -19,7 +19,7 @@ env:
 
 jobs:
   terraform-plan:
-    name: 'Terraform Plan'
+    name: 'Terraform Plan (Dev Environment)'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -47,7 +47,7 @@ jobs:
         working-directory: ${{ env.WORKING_DIRECTORY }}
 
       - name: 'Terraform Init'
-        run: terraform init
+        run: terraform init -backend-config="key=dev/terraform.tfstate"
         working-directory: ${{ env.WORKING_DIRECTORY }}
 
       - name: 'Terraform Validate'
@@ -73,7 +73,7 @@ jobs:
             const fs = require('fs');
             const plan = fs.readFileSync('${{ env.WORKING_DIRECTORY }}/tfplan.txt', 'utf8');
             
-            const output = `#### Terraform Plan 📋
+            const output = `#### Terraform Plan (Dev Environment) 📋
             \`\`\`
             ${plan}
             \`\`\`

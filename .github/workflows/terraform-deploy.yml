@@ -1,0 +1,92 @@
+name: 'Deploy to Environment'
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        type: choice
+        options:
+          - dev
+          - staging
+          - production
+      action:
+        description: 'Action to perform'
+        required: true
+        type: choice
+        options:
+          - plan
+          - apply
+        default: 'plan'
+
+# Ensure only one deployment runs at a time per environment
+concurrency:
+  group: terraform-deploy-${{ github.event.inputs.environment }}
+  cancel-in-progress: false
+
+env:
+  TERRAFORM_VERSION: '1.13.4'
+  WORKING_DIRECTORY: './terraform'
+
+jobs:
+  deploy:
+    name: 'Terraform ${{ github.event.inputs.action }} - ${{ github.event.inputs.environment }}'
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    permissions:
+      contents: read
+      id-token: write
+    
+    steps:
+      - name: 'Checkout Code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Terraform'
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: 'Azure Login with OIDC'
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+
+      - name: 'Terraform Init'
+        run: terraform init -backend-config="key=${{ github.event.inputs.environment }}/terraform.tfstate"
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+
+      - name: 'Terraform Validate'
+        run: terraform validate
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+
+      - name: 'Terraform Plan'
+        id: plan
+        run: |
+          terraform plan -no-color -out=tfplan -var-file="terraform.${{ github.event.inputs.environment }}.tfvars"
+          terraform show -no-color tfplan > tfplan.txt
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        env:
+          TF_VAR_subscription_id_nautilus: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+
+      - name: 'Display Plan'
+        run: cat tfplan.txt
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+
+      - name: 'Terraform Apply'
+        if: github.event.inputs.action == 'apply'
+        run: terraform apply -auto-approve tfplan
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        env:
+          TF_VAR_subscription_id_nautilus: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+
+      - name: 'Deployment Summary'
+        run: |
+          echo "### Deployment Complete! 🚀" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** ${{ github.event.inputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Action:** ${{ github.event.inputs.action }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Triggered by:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
