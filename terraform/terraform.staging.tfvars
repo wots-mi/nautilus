@@ -6,6 +6,7 @@ environment         = "staging"
 
 # Backend configuration for state storage
 backend_storage_account_name = "nautilustfstatestaging"
+backend_resource_group_name  = "terraform-state-staging"
 backend_container_name       = "state"
 
 # Common tags for all resources

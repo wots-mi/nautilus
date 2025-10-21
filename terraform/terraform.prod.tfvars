@@ -6,6 +6,7 @@ environment         = "prod"
 
 # Backend configuration for state storage
 backend_storage_account_name = "nautilustfstateprod"
+backend_resource_group_name  = "terraform-state-prod"
 backend_container_name       = "state"
 
 # Common tags for all resources

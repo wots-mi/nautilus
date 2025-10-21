@@ -43,6 +43,11 @@ variable "backend_storage_account_name" {
   type        = string
 }
 
+variable "backend_resource_group_name" {
+  description = "Resource group name for Terraform state storage account"
+  type        = string
+}
+
 variable "backend_container_name" {
   description = "Container name for Terraform state"
   type        = string

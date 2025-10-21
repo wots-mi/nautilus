@@ -6,6 +6,7 @@ environment         = "dev"
 
 # Backend configuration for state storage
 backend_storage_account_name = "nautilustfstatedev"
+backend_resource_group_name  = "terraform-state-dev"
 backend_container_name       = "state"
 
 # Common tags for all resources
