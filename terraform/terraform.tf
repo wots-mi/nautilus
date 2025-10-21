@@ -9,13 +9,12 @@ terraform {
   }
 
   # Remote state backend configuration
-  # Uncomment and configure for remote state management
-  # backend "azurerm" {
-  #   resource_group_name  = var.tf_state_resource_group
-  #   storage_account_name = var.tf_state_storage_account
-  #   container_name       = var.tf_state_container
-  #   key                  = "terraform.tfstate"
-  # }
+   backend "azurerm" {
+     resource_group_name  = var.tf_state_resource_group
+     storage_account_name = var.tf_state_storage_account
+     container_name       = var.tf_state_container
+     key                  = "terraform.tfstate"
+   }
 }
 
 provider "azurerm" {
