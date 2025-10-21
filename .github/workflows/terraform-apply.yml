@@ -41,8 +41,21 @@ jobs:
           tenant-id: ${{ secrets.ARM_TENANT_ID }}
           subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
 
+      - name: 'Load Backend Config from tfvars'
+        id: backend-config
+        run: |
+          STORAGE_ACCOUNT=$(grep backend_storage_account_name terraform.dev.tfvars | cut -d'"' -f2)
+          CONTAINER_NAME=$(grep backend_container_name terraform.dev.tfvars | cut -d'"' -f2)
+          echo "storage_account=$STORAGE_ACCOUNT" >> $GITHUB_OUTPUT
+          echo "container_name=$CONTAINER_NAME" >> $GITHUB_OUTPUT
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+
       - name: 'Terraform Init'
-        run: terraform init -backend-config="key=dev/terraform.tfstate"
+        run: |
+          terraform init \
+            -backend-config="storage_account_name=${{ steps.backend-config.outputs.storage_account }}" \
+            -backend-config="container_name=${{ steps.backend-config.outputs.container_name }}" \
+            -backend-config="key=terraform.tfstate"
         working-directory: ${{ env.WORKING_DIRECTORY }}
 
       - name: 'Terraform Validate'

@@ -37,3 +37,14 @@ variable "common_tags" {
   description = "Common tags to be applied to all resources"
   type        = map(string)
 }
+
+variable "backend_storage_account_name" {
+  description = "Storage account name for Terraform state (environment-specific)"
+  type        = string
+}
+
+variable "backend_container_name" {
+  description = "Container name for Terraform state"
+  type        = string
+  default     = "state"
+}
