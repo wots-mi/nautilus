@@ -1,10 +1,10 @@
 variable "subscription_id_nautilus" {
-  description = "The subscription ID for the Nautilus subscription"
+  description = "The Azure subscription ID for the Nautilus project"
   type        = string
 }
 
 variable "resource_group_name" {
-  description = "Name of the Azure Resource Group"
+  description = "Name of the Azure Resource Group for workload resources"
   type        = string
 
   validation {
