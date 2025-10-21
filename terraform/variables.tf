@@ -16,6 +16,7 @@ variable "resource_group_name" {
 variable "location" {
   description = "Azure region where resources will be created"
   type        = string
+  default     = "switzerlandnorth"
 
   validation {
     condition     = can(regex("^[a-z]{2,}$", replace(var.location, " ", "")))

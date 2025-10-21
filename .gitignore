@@ -8,6 +8,11 @@
 *-secret.tfvars
 *.local.tfvars
 # *.tfvars  # Commented out to allow environment tfvars
+# Allow terraform.tfvars but ignore other tfvars files
+*.auto.tfvars
+*.secret.tfvars
+*-secret.tfvars
+# *.tfvars  # Commented out to allow terraform.tfvars
 *.tfvars.json
 .terraform/
 .terraform.lock.hcl
