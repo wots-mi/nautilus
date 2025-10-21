@@ -9,12 +9,12 @@ terraform {
   }
 
 
-   backend "azurerm" {
-     resource_group_name  = "terraform-state-dev"
-     storage_account_name = "nautilustfstatedev"
-     container_name       = "state"
-     key                  = "terraform.tfstate"
-   }
+  backend "azurerm" {
+    resource_group_name  = "terraform-state-dev"
+    storage_account_name = "nautilustfstatedev"
+    container_name       = "state"
+    key                  = "terraform.tfstate"
+  }
 }
 
 provider "azurerm" {
@@ -24,14 +24,14 @@ provider "azurerm" {
       recover_soft_deleted_key_vaults = true
     }
     virtual_machine {
-      delete_os_disk_on_deletion            = true
-      graceful_shutdown                     = true
-      skip_shutdown_and_force_delete        = false
+      delete_os_disk_on_deletion     = true
+      graceful_shutdown              = true
+      skip_shutdown_and_force_delete = false
     }
     resource_group {
       prevent_deletion_if_contains_resources = true
     }
   }
-  subscription_id = "${var.subscription_id_nautilus}"
+  subscription_id            = var.subscription_id_nautilus
   skip_provider_registration = false
 }

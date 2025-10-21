@@ -1,6 +1,6 @@
 variable "subscription_id_nautilus" {
   description = "The subscription ID for the Nautilus subscription"
-  type       = string
+  type        = string
 }
 
 variable "resource_group_name" {
@@ -16,7 +16,7 @@ variable "resource_group_name" {
 variable "location" {
   description = "Azure region where resources will be created"
   type        = string
-  default = "switzerlandnorth"
+  default     = "switzerlandnorth"
 
   validation {
     condition     = can(regex("^[a-z]{2,}$", replace(var.location, " ", "")))

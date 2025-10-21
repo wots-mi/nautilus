@@ -8,6 +8,11 @@ on:
       - 'terraform/**'
       - '.github/workflows/terraform-plan.yml'
 
+# Ensure only one workflow runs at a time to prevent state lock conflicts
+concurrency:
+  group: terraform-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 env:
   TERRAFORM_VERSION: '1.13.4'
   WORKING_DIRECTORY: './terraform'
@@ -47,7 +52,7 @@ jobs:
         working-directory: ${{ env.WORKING_DIRECTORY }}
 
       - name: 'Terraform Plan'
-        run: terraform plan -no-color -out=tfplan
+        run: terraform plan -no-color -out=tfplan -var-file="terraform.tfvars"
         working-directory: ${{ env.WORKING_DIRECTORY }}
 
       - name: 'Generate Plan Text Output'
