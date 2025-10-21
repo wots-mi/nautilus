@@ -1,7 +1,11 @@
 # Terraform files
 *.tfstate
 *.tfstate.*
-*.tfvars
+# Allow terraform.tfvars but ignore other tfvars files
+*.auto.tfvars
+*.secret.tfvars
+*-secret.tfvars
+# *.tfvars  # Commented out to allow terraform.tfvars
 *.tfvars.json
 .terraform/
 .terraform.lock.hcl
