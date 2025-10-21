@@ -5,6 +5,10 @@ location            = "switzerlandnorth"
 environment         = "dev"
 
 # Common tags for all resources
+# Note: These will be merged with ManagedBy and CreatedAt tags in main.tf
 common_tags = {
+  Project     = "Nautilus"
+  CostCenter  = "Engineering"
+  Owner       = "DevOps-Team"
   Environment = "dev"
 }
