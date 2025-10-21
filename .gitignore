@@ -1,0 +1,92 @@
+# Terraform files
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+.terraform/
+.terraform.lock.hcl
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+crash.log
+crash.*.log
+.terraformrc
+terraform.rc
+.env
+.env.*.local
+
+# Azure files
+.azure/
+.azurerc
+*.azureauthority
+local.settings.json
+obj/
+bin/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-workspace
+*.sublime-project
+*.iml
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# OS files
+Thumbs.db
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# GitHub Actions
+.github/workflows/*.tmp
+.github/workflows/*.bak
+
+# Build and test artifacts
+dist/
+build/
+*.egg-info/
+__pycache__/
+*.pyc
+*.pyo
+node_modules/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# SSH keys
+*.pem
+*.pub
+id_rsa*
+id_dsa*
+
+# Credentials and secrets
+.env
+.env.local
+.env.*.local
+secrets.json
+credentials.json
+
+# Local development
+local/
+.localstack/

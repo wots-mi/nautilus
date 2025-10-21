@@ -1,0 +1,3 @@
+- Azure Subscription
+- Github Project
+- Contributor role for user on Azure Subscription
