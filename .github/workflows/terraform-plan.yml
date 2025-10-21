@@ -53,7 +53,6 @@ jobs:
 
       - name: 'Terraform Plan'
         run: terraform plan -no-color -out=tfplan -var-file="terraform.dev.tfvars"
-        run: terraform plan -no-color -out=tfplan -var-file="terraform.tfvars"
         working-directory: ${{ env.WORKING_DIRECTORY }}
         env:
           TF_VAR_subscription_id_nautilus: ${{ secrets.ARM_SUBSCRIPTION_ID }}
