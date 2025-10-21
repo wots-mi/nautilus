@@ -48,7 +48,7 @@ jobs:
         working-directory: ${{ env.WORKING_DIRECTORY }}
 
       - name: 'Terraform Plan'
-        run: terraform plan -no-color
+        run: terraform plan -no-color -var-file="terraform.tfvars"
         working-directory: ${{ env.WORKING_DIRECTORY }}
         env:
           ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
@@ -57,7 +57,7 @@ jobs:
           ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
 
       - name: 'Terraform Apply'
-        run: terraform apply -auto-approve -no-color
+        run: terraform apply -auto-approve -no-color -var-file="terraform.tfvars"
         working-directory: ${{ env.WORKING_DIRECTORY }}
         env:
           ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}

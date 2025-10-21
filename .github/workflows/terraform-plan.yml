@@ -52,7 +52,7 @@ jobs:
         working-directory: ${{ env.WORKING_DIRECTORY }}
 
       - name: 'Terraform Plan'
-        run: terraform plan -no-color -out=tfplan
+        run: terraform plan -no-color -out=tfplan -var-file="terraform.tfvars"
         working-directory: ${{ env.WORKING_DIRECTORY }}
 
       - name: 'Generate Plan Text Output'
