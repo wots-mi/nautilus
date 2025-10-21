@@ -1,6 +1,6 @@
 # Azure Configuration - Production Environment
 # subscription_id_nautilus - Set via GitHub Secrets (ARM_SUBSCRIPTION_ID)
-resource_group_name = "my-terraform-rg-prod"
+resource_group_name = "workload-rg-prod"
 location            = "switzerlandnorth"
 environment         = "prod"
 
