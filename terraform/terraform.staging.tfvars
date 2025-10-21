@@ -1,6 +1,6 @@
 # Azure Configuration - Staging Environment
 # subscription_id_nautilus - Set via GitHub Secrets (ARM_SUBSCRIPTION_ID)
-resource_group_name = "my-terraform-rg-staging"
+resource_group_name = "workload-rg-staging"
 location            = "switzerlandnorth"
 environment         = "staging"
 

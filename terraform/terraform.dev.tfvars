@@ -1,6 +1,6 @@
 # Azure Configuration
 # subscription_id_nautilus - Set via GitHub Secrets (ARM_SUBSCRIPTION_ID)
-resource_group_name = "my-terraform-rg-dev"
+resource_group_name = "workload-rg-dev"
 location            = "switzerlandnorth"
 environment         = "dev"
 
