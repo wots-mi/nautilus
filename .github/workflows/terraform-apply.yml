@@ -21,6 +21,7 @@ jobs:
   terraform-apply:
     name: 'Terraform Apply (Dev Environment)'
     runs-on: ubuntu-latest
+    environment: dev
     permissions:
       contents: read
       id-token: write
