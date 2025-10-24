@@ -68,9 +68,9 @@ output "github_environment" {
 output "storage_account" {
   description = "Terraform state storage account details"
   value = {
-    name                = azurerm_storage_account.tfstate.name
-    resource_group_name = azurerm_resource_group.tfstate.name
-    container_name      = azurerm_storage_container.tfstate.name
+    name                  = azurerm_storage_account.tfstate.name
+    resource_group_name   = azurerm_resource_group.tfstate.name
+    container_name        = azurerm_storage_container.tfstate.name
     primary_blob_endpoint = azurerm_storage_account.tfstate.primary_blob_endpoint
   }
 }

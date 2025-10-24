@@ -41,14 +41,14 @@ resource "azurerm_storage_account" "tfstate" {
   account_tier             = "Standard"
   account_replication_type = "LRS"
   min_tls_version          = "TLS1_2"
-  
+
   blob_properties {
     versioning_enabled = true
-    
+
     delete_retention_policy {
       days = 30
     }
-    
+
     container_delete_retention_policy {
       days = 30
     }
