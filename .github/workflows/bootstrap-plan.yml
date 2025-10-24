@@ -36,14 +36,12 @@ jobs:
         with:
           terraform_version: ${{ env.TERRAFORM_VERSION }}
 
-      - name: 'Azure Login with OIDC (if UAMI exists)'
-        id: azure-login
-        continue-on-error: true
+      - name: 'Azure Login with OIDC'
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.BOOTSTRAP_ARM_CLIENT_ID || secrets.ARM_CLIENT_ID }}
-          tenant-id: ${{ secrets.BOOTSTRAP_ARM_TENANT_ID || secrets.ARM_TENANT_ID }}
-          subscription-id: ${{ secrets.BOOTSTRAP_ARM_SUBSCRIPTION_ID || secrets.ARM_SUBSCRIPTION_ID }}
+          client-id: ${{ secrets.BOOTSTRAP_ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.BOOTSTRAP_ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.BOOTSTRAP_ARM_SUBSCRIPTION_ID }}
 
       - name: 'Terraform Format Check'
         run: terraform fmt -check -recursive
@@ -63,7 +61,7 @@ jobs:
         run: terraform plan -no-color -out=tfplan -var-file="terraform.dev.tfvars"
         working-directory: ${{ env.WORKING_DIRECTORY }}
         env:
-          TF_VAR_subscription_id_nautilus: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          TF_VAR_subscription_id_nautilus: ${{ secrets.BOOTSTRAP_ARM_SUBSCRIPTION_ID }}
           TF_VAR_github_token: ${{ secrets.GH_TOKEN }}
 
       - name: 'Generate Plan Text Output'
