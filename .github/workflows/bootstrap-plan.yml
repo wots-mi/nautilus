@@ -21,6 +21,7 @@ jobs:
   terraform-plan:
     name: 'Bootstrap Plan (Dev Environment)'
     runs-on: ubuntu-latest
+    environment: dev
     permissions:
       contents: read
       pull-requests: write
