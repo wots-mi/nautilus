@@ -12,11 +12,9 @@ terraform {
     }
   }
 
-  # Backend temporarily disabled for initial bootstrap
-  # Uncomment after first deployment to migrate state to Azure Storage
-  # backend "azurerm" {
-  #   use_oidc = true
-  # }
+  backend "azurerm" {
+    use_oidc = true
+  }
 }
 
 provider "azurerm" {
