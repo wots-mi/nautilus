@@ -1,0 +1,74 @@
+name: 'Governance Apply (alz-layer-1)'
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'alz-layer-1/**'
+      - '.github/workflows/governance-apply.yml'
+
+# Ensure only one workflow runs at a time to prevent state lock conflicts
+concurrency:
+  group: governance-apply-dev
+  cancel-in-progress: false
+
+env:
+  TERRAFORM_VERSION: '1.13.4'
+  WORKING_DIRECTORY: './alz-layer-1'
+
+jobs:
+  terraform-apply:
+    name: 'Governance Apply (Dev Environment)'
+    runs-on: ubuntu-latest
+    environment: dev
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: 'Checkout Code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Terraform'
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: 'Azure Login with OIDC'
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+
+      - name: 'Terraform Init'
+        run: terraform init
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+
+      - name: 'Terraform Validate'
+        run: terraform validate
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+
+      - name: 'Terraform Plan'
+        run: terraform plan -no-color -var-file="terraform.tfvars"
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        env:
+          TF_VAR_subscription_id_nautilus: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+
+      - name: 'Terraform Apply'
+        run: terraform apply -auto-approve -no-color -var-file="terraform.tfvars"
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        env:
+          TF_VAR_subscription_id_nautilus: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+
+      - name: '✅ Governance Deployment Complete'
+        run: |
+          echo "=============================================="
+          echo "✅ Governance layer deployed successfully!"
+          echo "=============================================="
+          echo "Deployed:"
+          echo "  - Management Infrastructure (Log Analytics, Automation Account)"
+          echo "  - Policy Definitions (158+ policies)"
+          echo "  - Policy Assignments"
+          echo "=============================================="

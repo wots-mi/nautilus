@@ -1,0 +1,120 @@
+name: 'Bootstrap Apply (alz-level-0)'
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+      confirm:
+        description: 'Type "bootstrap" to confirm deployment'
+        required: true
+        type: string
+
+# Ensure only one workflow runs at a time to prevent conflicts
+concurrency:
+  group: bootstrap-apply-${{ github.event.inputs.environment }}
+  cancel-in-progress: false
+
+env:
+  TERRAFORM_VERSION: '1.13.4'
+  WORKING_DIRECTORY: './alz-level-0'
+
+jobs:
+  validate-confirmation:
+    name: 'Validate Confirmation'
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Check Confirmation'
+        run: |
+          if [ "${{ github.event.inputs.confirm }}" != "bootstrap" ]; then
+            echo "❌ Confirmation failed. You must type 'bootstrap' to proceed."
+            exit 1
+          fi
+          echo "✅ Confirmation validated"
+
+  terraform-apply:
+    name: 'Bootstrap Apply (${{ github.event.inputs.environment }})'
+    runs-on: ubuntu-latest
+    needs: validate-confirmation
+    environment: ${{ github.event.inputs.environment }}
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: 'Checkout Code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Terraform'
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: '⚠️ Bootstrap Deployment Warning'
+        run: |
+          echo "=============================================="
+          echo "⚠️  BOOTSTRAP INFRASTRUCTURE DEPLOYMENT"
+          echo "=============================================="
+          echo "Environment: ${{ github.event.inputs.environment }}"
+          echo ""
+          echo "This will create:"
+          echo "  - User Assigned Managed Identity"
+          echo "  - Storage Account for Terraform State"
+          echo "  - Federated Identity Credential (OIDC)"
+          echo "  - GitHub Environment & Secrets"
+          echo ""
+          echo "⚠️  Note: Uses LOCAL state initially"
+          echo "=============================================="
+
+      - name: 'Azure Login with OIDC (if UAMI exists)'
+        id: azure-login
+        continue-on-error: true
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.BOOTSTRAP_ARM_CLIENT_ID || secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.BOOTSTRAP_ARM_TENANT_ID || secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.BOOTSTRAP_ARM_SUBSCRIPTION_ID || secrets.ARM_SUBSCRIPTION_ID }}
+
+      - name: 'Terraform Init'
+        run: terraform init
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        env:
+          TF_VAR_github_token: ${{ secrets.GH_TOKEN }}
+
+      - name: 'Terraform Validate'
+        run: terraform validate
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+
+      - name: 'Terraform Plan'
+        run: terraform plan -no-color -var-file="terraform.${{ github.event.inputs.environment }}.tfvars"
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        env:
+          TF_VAR_subscription_id_nautilus: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          TF_VAR_github_token: ${{ secrets.GH_TOKEN }}
+
+      - name: 'Terraform Apply'
+        run: terraform apply -auto-approve -no-color -var-file="terraform.${{ github.event.inputs.environment }}.tfvars"
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        env:
+          TF_VAR_subscription_id_nautilus: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          TF_VAR_github_token: ${{ secrets.GH_TOKEN }}
+
+      - name: '✅ Bootstrap Deployment Complete'
+        run: |
+          echo "=============================================="
+          echo "✅ Bootstrap infrastructure deployed successfully!"
+          echo "=============================================="
+          echo "Environment: ${{ github.event.inputs.environment }}"
+          echo ""
+          echo "Next Steps:"
+          echo "1. Verify GitHub Environment & Secrets created"
+          echo "2. Optionally migrate to remote state:"
+          echo "   - Uncomment backend block in terraform.tf"
+          echo "   - Run: terraform init -migrate-state"
+          echo "=============================================="

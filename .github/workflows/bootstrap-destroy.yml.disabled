@@ -1,0 +1,115 @@
+name: 'Bootstrap Destroy (alz-level-0)'
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to destroy'
+        required: true
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+      confirm:
+        description: 'Type "destroy-bootstrap" to confirm destruction'
+        required: true
+        type: string
+
+# Ensure only one workflow runs at a time to prevent conflicts
+concurrency:
+  group: bootstrap-destroy-${{ github.event.inputs.environment }}
+  cancel-in-progress: false
+
+env:
+  TERRAFORM_VERSION: '1.13.4'
+  WORKING_DIRECTORY: './alz-level-0'
+
+jobs:
+  validate-confirmation:
+    name: 'Validate Confirmation'
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Check Confirmation'
+        run: |
+          if [ "${{ github.event.inputs.confirm }}" != "destroy-bootstrap" ]; then
+            echo "❌ Confirmation failed. You must type 'destroy-bootstrap' to proceed."
+            exit 1
+          fi
+          echo "✅ Confirmation validated"
+
+  terraform-destroy:
+    name: 'Bootstrap Destroy (${{ github.event.inputs.environment }})'
+    runs-on: ubuntu-latest
+    needs: validate-confirmation
+    environment: ${{ github.event.inputs.environment }}
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: 'Checkout Code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Terraform'
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: '🔴 Bootstrap Destruction Warning'
+        run: |
+          echo "=============================================="
+          echo "🔴 BOOTSTRAP INFRASTRUCTURE DESTRUCTION"
+          echo "=============================================="
+          echo "Environment: ${{ github.event.inputs.environment }}"
+          echo ""
+          echo "⚠️  WARNING: This will DESTROY:"
+          echo "  - User Assigned Managed Identity"
+          echo "  - Storage Account & Terraform State"
+          echo "  - Federated Identity Credential"
+          echo "  - GitHub Environment & Secrets"
+          echo ""
+          echo "⚠️  This will break GitHub Actions workflows!"
+          echo "⚠️  All Terraform state will be DELETED!"
+          echo "=============================================="
+
+      - name: 'Azure Login with OIDC'
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.BOOTSTRAP_ARM_CLIENT_ID || secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.BOOTSTRAP_ARM_TENANT_ID || secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.BOOTSTRAP_ARM_SUBSCRIPTION_ID || secrets.ARM_SUBSCRIPTION_ID }}
+
+      - name: 'Terraform Init'
+        run: terraform init
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        env:
+          TF_VAR_github_token: ${{ secrets.GH_TOKEN }}
+
+      - name: 'Terraform Validate'
+        run: terraform validate
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+
+      - name: 'Terraform Plan -destroy'
+        run: terraform plan -destroy -no-color -var-file="terraform.${{ github.event.inputs.environment }}.tfvars"
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        env:
+          TF_VAR_subscription_id_nautilus: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          TF_VAR_github_token: ${{ secrets.GH_TOKEN }}
+
+      - name: 'Terraform Destroy'
+        run: terraform destroy -auto-approve -no-color -var-file="terraform.${{ github.event.inputs.environment }}.tfvars"
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        env:
+          TF_VAR_subscription_id_nautilus: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          TF_VAR_github_token: ${{ secrets.GH_TOKEN }}
+
+      - name: '🔴 Bootstrap Destruction Complete'
+        run: |
+          echo "=============================================="
+          echo "🔴 Bootstrap infrastructure destroyed"
+          echo "=============================================="
+          echo "Environment: ${{ github.event.inputs.environment }}"
+          echo ""
+          echo "⚠️  GitHub Actions will no longer work until bootstrap is redeployed"
+          echo "=============================================="

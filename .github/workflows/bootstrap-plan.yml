@@ -1,0 +1,102 @@
+name: 'Bootstrap Plan (alz-level-0)'
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'alz-level-0/**'
+      - '.github/workflows/bootstrap-plan.yml'
+
+# Ensure only one workflow runs at a time to prevent conflicts
+concurrency:
+  group: bootstrap-plan-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  TERRAFORM_VERSION: '1.13.4'
+  WORKING_DIRECTORY: './alz-level-0'
+
+jobs:
+  terraform-plan:
+    name: 'Bootstrap Plan (Dev Environment)'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+    
+    steps:
+      - name: 'Checkout Code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Terraform'
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: 'Azure Login with OIDC (if UAMI exists)'
+        id: azure-login
+        continue-on-error: true
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.BOOTSTRAP_ARM_CLIENT_ID || secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.BOOTSTRAP_ARM_TENANT_ID || secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.BOOTSTRAP_ARM_SUBSCRIPTION_ID || secrets.ARM_SUBSCRIPTION_ID }}
+
+      - name: 'Terraform Format Check'
+        run: terraform fmt -check -recursive
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+
+      - name: 'Terraform Init'
+        run: terraform init
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        env:
+          TF_VAR_github_token: ${{ secrets.GH_TOKEN }}
+
+      - name: 'Terraform Validate'
+        run: terraform validate
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+
+      - name: 'Terraform Plan'
+        run: terraform plan -no-color -out=tfplan -var-file="terraform.dev.tfvars"
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        env:
+          TF_VAR_subscription_id_nautilus: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          TF_VAR_github_token: ${{ secrets.GH_TOKEN }}
+
+      - name: 'Generate Plan Text Output'
+        run: terraform show -no-color tfplan > plan-output.txt
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+
+      - name: 'Comment PR with Plan'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const plan = fs.readFileSync('${{ env.WORKING_DIRECTORY }}/plan-output.txt', 'utf8');
+            const maxLength = 65000;
+            const truncatedPlan = plan.length > maxLength ? plan.substring(0, maxLength) + '\n...(truncated)' : plan;
+            
+            const output = `#### Bootstrap Terraform Plan (Dev) 🏗️
+            
+            <details><summary>Show Plan</summary>
+            
+            \`\`\`terraform
+            ${truncatedPlan}
+            \`\`\`
+            
+            </details>
+            
+            **Note:** This is the bootstrap infrastructure that creates the UAMI and storage account for GitHub Actions.
+            
+            *Workflow: \`${{ github.workflow }}\`*
+            *Action: \`${{ github.event_name }}\`*`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            });
